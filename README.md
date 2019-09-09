@@ -1,4 +1,4 @@
-
+Player data comes from http://stats.nba.com/js/data/ptsd/stats_ptsd.js
 
 From the nba_api github, the format of the shot data is as follows:
 
