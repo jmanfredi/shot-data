@@ -12,15 +12,15 @@ From the nba_api github, the format of the shot data is as follows:
             "PERIOD",
             "MINUTES_REMAINING",
             "SECONDS_REMAINING",
-            "EVENT_TYPE",
-            "ACTION_TYPE",
-            "SHOT_TYPE",
+            "EVENT_TYPE", ("Missed Shot" or "Made Shot")
+            "ACTION_TYPE", (variety of shot, e.g. "Jump Shot")
+            "SHOT_TYPE", ("3PT Field Goal" or "2PT Field Goal")
             "SHOT_ZONE_BASIC",
             "SHOT_ZONE_AREA",
             "SHOT_ZONE_RANGE",
             "SHOT_DISTANCE",
-            "LOC_X",
-            "LOC_Y",
+            "LOC_X", (hoop is at LOC_X = 0...units are in decifeet (?) )
+            "LOC_Y", (hoop is at LOC_Y = 0, which is 40 units above baseline )
             "SHOT_ATTEMPTED_FLAG",
             "SHOT_MADE_FLAG",
             "GAME_DATE",
