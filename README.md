@@ -19,8 +19,8 @@ From the nba_api github, the format of the shot data is as follows:
             "SHOT_ZONE_AREA",
             "SHOT_ZONE_RANGE",
             "SHOT_DISTANCE",
-            "LOC_X", (hoop is at LOC_X = 0...units are in decifeet (?) )
-            "LOC_Y", (hoop is at LOC_Y = 0, which is 40 units above baseline )
+            "LOC_X", (hoop is at LOC_X = 0...units are in decifeet)
+            "LOC_Y", (hoop is at LOC_Y = 0, which is 40 decifeet above baseline )
             "SHOT_ATTEMPTED_FLAG",
             "SHOT_MADE_FLAG",
             "GAME_DATE",

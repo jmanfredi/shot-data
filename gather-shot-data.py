@@ -35,13 +35,13 @@ players_json_str = players_resp_text[
   ]
 
 # Make a list of player IDs
-# Structure of each entry is: ID, Name, Active (1/0), Rookier year, last year played, ?, ?
+# Structure of each entry is: ID, Name, Active (1/0), Rookie year, last year played, ?, ?
 players_dict = json.loads(players_json_str)["data"]["players"]
 players_year_start = [player[3] for player in players_dict]
 players_year_end = [player[4] for player in players_dict]
-player_ids = [player[0] for player in players_dict if player[3] < 2014 and player[4] > 2015]
-player_names = [player[1] for player in players_dict if player[3] < 2014 and player[4] > 2015]
-player_ids_names = [(player[0],player[1]) for player in players_dict if player[3] < 2014 and player[4] > 2015]
+player_ids = [player[0] for player in players_dict if player[3] <= 2014 and player[4] >= 2015]
+player_names = [player[1] for player in players_dict if player[3] <= 2014 and player[4] >= 2015]
+player_ids_names = [(player[0],player[1]) for player in players_dict if player[3] <= 2014 and player[4] >= 2015]
 
 #print(player_ids)
 

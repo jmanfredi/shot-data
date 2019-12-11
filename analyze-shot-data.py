@@ -1,19 +1,30 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import json
-import seaborn as sns
 import os
+import sys
 
 
 totalRealPoints = 0
 totalNewPoints = 0
-for playerdata in os.listdir('data/2014-15'):
+totalShotsMade = 0
+totalShotDistance = 0
+
+# Rows list will hold player data dictionaries which will then be put into
+# a dictionary
+rows = []
+
+season = '2018-19'
+directory = 'data/' + season
+
+for playerdata in os.listdir(directory):
+
+  playerDict = {}
 
   print(f"Player: {playerdata}")
+  playerDict["NAME"] = playerdata.replace(".json","")
 
-  filename = 'data/2014-15/' + playerdata
-  #data = json.load(open('data/2014-15/CurryStephen.json'))
+  filename = directory + '/' + playerdata
   data = json.load(open(filename))
 
   # Make a list of dicts for the shot data from list of dicts in resultsSets
@@ -27,49 +38,99 @@ for playerdata in os.listdir('data/2014-15'):
   # Create a column to correspond to a real point value
   dataDF['REAL_POINTS'] = [3 if x == '3PT Field Goal' else (2 if x == '2PT Field Goal' else -1) for x in dataDF['SHOT_TYPE']]
 
-  # Calculate a new column, which is the new point value
-  #dataDF['NEW_POINTS'] = [ 1 + (1.0/x) if x != 0 else 1 for x in dataDF['SHOT_DISTANCE']]
-  dataDF['NEW_POINTS'] = [ 1 + x for x in dataDF['SHOT_DISTANCE']]
+ # Create a column to confirm I understand shot distance column
+  dataDF['CALC_SHOT_DISTANCE'] = np.sqrt( dataDF['LOC_X']*dataDF['LOC_X'] + 
+    (dataDF['LOC_Y'])*(dataDF['LOC_Y']) )
 
-#myplot = dataDF.plot(x='LOC_X', y='LOC_Y', kind = 'hexbin', figsize = [10,6],
-#  title='Steph Curry Shots', colormap='viridis', gridsize=100)
-#colors = dataDF['SHOT_MADE_FLAG'].map({0:'r',1:'b'})
-#myplot = dataDF.plot(x='LOC_X', y='LOC_Y', kind = 'scatter', figsize = [10,6],
-#  title='Steph Curry Shots', colormap='viridis',c=colors)
-# myplot = sns.scatterplot(x='LOC_X',y='LOC_Y',data=dataDF,hue='SHOT_MADE_FLAG')
+  factor = 0.04210526 # set min value to 2, and have 3 at 23.75 ft
+  # Calculate new points
+  dataDF['NEW_POINTS'] = [ 2 + factor*x for x in dataDF['SHOT_DISTANCE']]
 
-  # Create a column to confirm I understand shot distance column
-#dataDF['CALC_SHOT_DISTANCE'] = [sqrt( x*x + (y-40)(y-40) ) for (x,y) in (dataDF['LOC_X'],dataDF['LOC_Y'])]
-  dataDF['CALC_SHOT_DISTANCE'] = np.sqrt( dataDF['LOC_X']*dataDF['LOC_X'] + (dataDF['LOC_Y'])*(dataDF['LOC_Y']) )
-
-
-#checkDistance = dataDF.plot(x='SHOT_DISTANCE',y='CALC_SHOT_DISTANCE',kind='scatter')
-#checkLocY = dataDF.plot(x='LOC_X',y='LOC_Y',kind='scatter')
-#plt.show()
+  
+  playerShotCount = dataDF['SHOT_ATTEMPTED_FLAG'].sum()
 
   # Calculate the total number of points scored by the player during this season
   madeDF = dataDF[ dataDF['SHOT_MADE_FLAG'] == 1]
+
+# Check for close range shots with shot distance
+  # If not close range, check to see if it's still a two point shot
+  # Everything else is a three
+  #dataDF['RANGE'] = [1 if x < 10 else (2 if y == 2 else 3) for x,y in (dataDF['SHOT_DISTANCE'],dataDF['REAL_POINTS']) ]
+  madeDF['RANGE'] = [1 if x < 100 else (2 if y == 2 else 3) for x,y in zip(madeDF['CALC_SHOT_DISTANCE'],madeDF['REAL_POINTS']) ]
+  #madeDF['RANGE'] = [2 if y == 2 else 3 for y in madeDF['REAL_POINTS'] ]
+  #madeDF['RANGE'] = [1 if x < 10 for x in madeDF['SHOT_DISTANCE'] ]
+
+
   playerRealPoints = madeDF['REAL_POINTS'].sum()
-  print(f"Player scored {totalRealPoints} points in this season")
+  playerShotsMade = madeDF['SHOT_MADE_FLAG'].sum()
+  #playerShotDistance = madeDF['SHOT_DISTANCE'].sum()
+  playerShotDistance = madeDF['CALC_SHOT_DISTANCE'].sum()
+  if playerShotCount > 0:
+    playerAvgShotDistance = playerShotDistance / playerShotCount
+  else:
+    playerAvgShotDistance = 0
+  print(f"Player scored {playerRealPoints} points in this season")
   totalRealPoints = totalRealPoints + playerRealPoints
+  totalShotsMade = totalShotsMade + playerShotsMade
+  totalShotDistance = totalShotDistance + playerShotDistance
 
   playerNewPoints = madeDF['NEW_POINTS'].sum()
-  print(f"Player scored {totalNewPoints} new points in this season")
+  print(f"Player scored {playerNewPoints} new points in this season")
   totalNewPoints = totalNewPoints + playerNewPoints
 
+  #Add to new dataframe that stores new values
+  playerDict["REAL_POINTS"] = playerRealPoints
+  playerDict["NEW_POINTS"] = playerNewPoints
+  playerDict["AVG_SHOT_DIST"] = playerAvgShotDistance
+  playerDict["SHOT_COUNT"] = playerShotCount
+  playerDict["REAL_POINTS_PER_SHOT"] = playerRealPoints / playerShotCount
+  playerDict["NEW_POINTS_PER_SHOT"] = playerNewPoints / playerShotCount  
+  playerDict["POINT_GAIN"] = playerNewPoints - playerRealPoints
+  if playerRealPoints > 0:
+    playerDict["POINT_GAIN_FRAC"] = playerNewPoints / playerRealPoints
+  else:
+    playerDict["POINT_GAIN_FRAC"] = 0
+
+  #Calculate percentage of shots from each range category
+  playerShort = 100*madeDF[ madeDF['RANGE'] == 1 ]['RANGE'].sum() / playerShotCount
+  playerMid   = 100*madeDF[ madeDF['RANGE'] == 2 ]['RANGE'].sum() / playerShotCount
+  playerLong  = 100*madeDF[ madeDF['RANGE'] == 3 ]['RANGE'].sum() / playerShotCount
+
+  playerDict["SHORT_PERC"] = playerShort
+  playerDict["MID_PERC"]   = playerMid
+  playerDict["LONG_PERC"]  = playerLong
+
+  rows.append(playerDict)
+
+# Calculate the average number of real points and new points
+avgReal = np.mean( [ d["REAL_POINTS"] for d in rows ] )
+print(f"Average real points scored: {avgReal}")
+avgNew = np.mean( [ d["NEW_POINTS"] for d in rows ] )
+print(f"Average new points scored: {avgNew}")
+
+# Get new column to account for change vs average
+for playerDict in rows:
+  playerDict["REAL_DIFF_AVG"] = 100 * ( playerDict["REAL_POINTS"] - avgReal ) / avgReal
+  playerDict["NEW_DIFF_AVG"] = 100 * ( playerDict["NEW_POINTS"] - avgNew ) / avgNew
+  playerDict["DIFF_AVG_CHANGE"] = playerDict["NEW_DIFF_AVG"] - playerDict["REAL_DIFF_AVG"]
 
 # Normalize the new points to the old points
-normFactor = totalRealPoints / totalNewPoints
+normFactor = ( totalRealPoints - 2*totalShotsMade ) / totalShotDistance
 print(f"{totalRealPoints} real points scored off of field goals")
 print(f"{totalNewPoints} new points scored off of field goals")
 print(f"Normalization factor is {normFactor}")
-# dataDF['NEW_POINTS'] = normFactor * dataDF['NEW_POINTS']
-# madeDF = dataDF[ dataDF['SHOT_MADE_FLAG'] == 1]
-# totalRealPoints = madeDF['REAL_POINTS'].sum()
-# print(f"Player scored {totalRealPoints} points in this season")
 
-# totalNewPoints = madeDF['NEW_POINTS'].sum()
-# print(f"Player scored {totalNewPoints} (normalized) new points in this season")
+# Instantiate DataFrame
+playerDF = pd.DataFrame(rows)
+playerDF = playerDF.set_index('NAME')
+print(playerDF.head())
+outfilename = season + '-player-data.csv'
+playerDF.to_csv(outfilename)
+
+
+
+
+
 
 
 
