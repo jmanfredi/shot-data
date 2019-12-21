@@ -45,7 +45,6 @@ for playerdata in os.listdir(directory):
   factor = 0.04210526 # set min value to 2, and have 3 at 23.75 ft
   # Calculate new points
   dataDF['NEW_POINTS'] = [ 2 + factor*x for x in dataDF['SHOT_DISTANCE']]
-
   
   playerShotCount = dataDF['SHOT_ATTEMPTED_FLAG'].sum()
 
@@ -123,6 +122,11 @@ print(f"Normalization factor is {normFactor}")
 # Instantiate DataFrame
 playerDF = pd.DataFrame(rows)
 playerDF = playerDF.set_index('NAME')
+
+playerDF['REAL_POINT_RANK'] = playerDF['REAL_POINTS'].rank(ascending = False)
+playerDF['NEW_POINT_RANK'] = playerDF['NEW_POINTS'].rank(ascending = False)
+
+
 print(playerDF.head())
 outfilename = season + '-player-data.csv'
 playerDF.to_csv(outfilename)
